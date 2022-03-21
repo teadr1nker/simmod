@@ -74,8 +74,18 @@ arr = np.array(arr)
 for x in range(3):
     for y in range(3):
         if x < y:
-            r = np.corrcoef(arr[x,:], arr[i,:])
-            print(r)
+            r = np.prod(np.corrcoef(arr[x,:], arr[y,:]))
+            v = 0.5 * np.log((1+r) / np.sqrt(1-r))
+            ro = 0.8
+            rv = (v - ro) / np.sqrt(100-3)
+            alpha = 0.95
+            lp = stats.norm.cdf((1-alpha)/2) - stats.norm.cdf(-(1-alpha)/2)
+            print(x, y)
+            if (rv < lp):
+                print('Равны')
+            else:
+                print('Не равны')
+
 
 #2
 def root(x, y):
