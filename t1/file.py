@@ -27,7 +27,8 @@ def fisher(x):
 #tex.section("1", 1)
 #1.1
 print('1.1)')
-n = 10000
+n = 50
+
 
 X = np.linspace(0, 2*np.pi, n)
 Y = [dens(x) for x in X]
@@ -43,7 +44,7 @@ while i < n:
         sample[i] = x
         i += 1
 
-b, c = density(sample, 100)
+b, c = density(sample, 10)
 plt.plot(b, c / max(c))
 plt.plot(X, Y / max(Y))
 plt.title('Сгенерированная выборка')
@@ -52,10 +53,15 @@ plt.savefig('dens1.png')
 plt.clf()
 #tex.addimage('dens1.png')
 
-#from scipy.stats import chi2_contingency
-#stat, p, dof, expected = chi2_contingency(sample)
-#tex.plaintext(test)
-#print(f'stat: {stat} pvalue: {p} dof: {dof} expected: {expected}')
+from scipy.stats import chi2_contingency
+stat, p, dof, expected = chi2_contingency([sample, Y])
+#print(test)
+stat_table = 28941
+print(f'stat: {stat} stat_table: {stat_table} pvalue: {p} dof: {dof}')
+if stat < stat_table:
+    print('H0 верна')
+else:
+    print('H0 не верна')
 
 #1.2
 print('\n1.2)')
@@ -80,16 +86,16 @@ lmbd = 26
 beta = 1
 n = 100
 
-def fin(x):
+def fin(x): #weibull inv
   return lmbd * root(-1 * np.log(1 - x), beta)
 
 a = 0
-b = 26
+b = 32
 
-def f(x):
+def f(x): #weibull
     return 1 - np.exp(-1 * ((x / lmbd) ** beta))
 
-def finc(x):
+def finc(x): #weibull inv constrained
     y = -np.log(1 - x * (f(b) - f(a)) - f(a))
     return lmbd * root(y, beta)
 
@@ -103,32 +109,30 @@ def dist(x):
     return 0
 
 def task2(first = True):
-    Y = []
-    X = []
-    for i in range(n):
-        u = np.random.uniform()
-        if first:
-            v = fin(u)
-        else:
-            v = finc(u)
-        X.append(v)
-        Y.append(dist(v))
+    Y = np.random.uniform(size=n)
+    if first:
+        X = np.array([fin(y) for y in Y])
+    else:
+        X = np.array([finc(y) for y in Y])
 
-    var = np.var(Y)
-    mu = np.mean(Y)
-    t = 1.95
-    r = mu - (np.sqrt(var) * t / np.sqrt(n))
-    l = mu + (np.sqrt(var) * t / np.sqrt(n))
+    Wind = np.array([dist(x) for x in X])
+    WindM = Wind.mean()
+    S = Wind.std()
+    if first:
+        q = fin(0.05)
+    else:
+        q = fin(0.05)
 
-    print(f'Доверительный интервал {l}:{r}')
-    b, c = density(Y, 20)
-    plt.plot(b, c)
-    plt.axvline(l, color = 'r')
-    plt.axvline(r, color = 'b')
+    Z = q * S / np.sqrt(n)
+    a = WindM - Z; b = WindM +Z
+    print(f'Доверительный интервал: {a}:{b}')
+    B, c = density(Wind, 20)
+    plt.plot(B, c)
+    plt.axvline(a, color = 'r')
+    plt.axvline(b, color = 'g')
     str = '1' if first else '2'
     plt.savefig(f'2plot{str}.png')
     plt.clf()
-
 
 task2()
 task2(first = False)
@@ -184,4 +188,4 @@ for i in range(N):
         e -= np.random.uniform(0, E0)
     E[i] = e
 
-print(f'loss mean: {E.mean()}')        
+print(f'loss mean: {E.mean()}')
