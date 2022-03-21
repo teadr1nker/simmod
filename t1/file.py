@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import scipy.linalg as linalg
 #import sympy as smp
 import sys
 sys.path.append('../common/')
@@ -25,6 +26,7 @@ def fisher(x):
 #tex.section("Лабораторная работа №1")
 #tex.section("1", 1)
 #1.1
+print('1.1)')
 n = 10000
 
 X = np.linspace(0, 2*np.pi, n)
@@ -50,44 +52,28 @@ plt.savefig('dens1.png')
 plt.clf()
 #tex.addimage('dens1.png')
 
-from scipy.stats import chi2_contingency
-stat, p, dof, expected = chi2_contingency(sample)
+#from scipy.stats import chi2_contingency
+#stat, p, dof, expected = chi2_contingency(sample)
 #tex.plaintext(test)
-print(f'stat: {stat} pvalue: {p} dof: {dof} expected: {expected}')
+#print(f'stat: {stat} pvalue: {p} dof: {dof} expected: {expected}')
 
 #1.2
-n = 3
-mu = np.array([4, 12, 7])
-sigma = np.array([[9, 8, 9],
-                  [8, 16, 12],
-                  [6, 12, 18]])
-mtx = np.linalg.cholesky(sigma).T
+print('\n1.2)')
 
-arr = []
-for i in range(100):
-    y = np.random.normal(0, 1, 3)
-    z = (y * mtx).T
-    for row in z:
-        arr.append(row)
-arr = np.array(arr)
-
-for x in range(3):
-    for y in range(3):
-        if x < y:
-            r = np.prod(np.corrcoef(arr[x,:], arr[y,:]))
-            v = 0.5 * np.log((1+r) / np.sqrt(1-r))
-            ro = 0.8
-            rv = (v - ro) / np.sqrt(100-3)
-            alpha = 0.95
-            lp = stats.norm.cdf((1-alpha)/2) - stats.norm.cdf(-(1-alpha)/2)
-            print(x, y)
-            if (rv < lp):
-                print('Равны')
-            else:
-                print('Не равны')
+cov = np.array([[0.99, 0, 0],
+                [0, 0.2, 0],
+                [0, 0, 0.5]])
+print(f'Матрица\n{cov}')
+Xs = np.random.multivariate_normal([0, 0, 0], cov, size = n)
+covm = np.ma.cov(Xs,rowvar=False)
+print(f'Матрица ковариации сгенерированных данных\n{covm}')
+dif = cov-covm
+print(f'Разница\n{dif}')
+#print(f'prod: {np.pord(dif)}')
 
 
 #2
+print('\n2)')
 def root(x, y):
     return pow(x, 1/y)
 lmbd = 26
@@ -100,12 +86,12 @@ def fin(x):
 a = 0
 b = 26
 
-def finc(x):
-    y = -np.log(1 - x * (fin(b) - fin(a)) - fin(a))
-    return lmbd * root(y, beta)
-
 def f(x):
     return 1 - np.exp(-1 * ((x / lmbd) ** beta))
+
+def finc(x):
+    y = -np.log(1 - x * (f(b) - f(a)) - f(a))
+    return lmbd * root(y, beta)
 
 def dist(x):
     if x < 4:
@@ -134,54 +120,68 @@ def task2(first = True):
     r = mu - (np.sqrt(var) * t / np.sqrt(n))
     l = mu + (np.sqrt(var) * t / np.sqrt(n))
 
-    print(l, r)
-    b, c = density(Y, 10)
+    print(f'Доверительный интервал {l}:{r}')
+    b, c = density(Y, 20)
     plt.plot(b, c)
-    plt.axhline(l, color = 'r')
-    plt.axhline(r, color = 'b')
+    plt.axvline(l, color = 'r')
+    plt.axvline(r, color = 'b')
     str = '1' if first else '2'
     plt.savefig(f'2plot{str}.png')
     plt.clf()
 
 
 task2()
-#task2(first = False)
+task2(first = False)
 
 #3
-n = 100
-t = 2
-h = t / n
-v = np.arange(h, t, h)
-#print(v)
-sigma = []
+print('\n3)')
+def Y(s):
+    if np.abs(s) >= 1:
+        return 0
+    else:
+        return (2 + np.abs(s)) * (1 - np.abs(s))**2
 
-for x in range(len(v)):
-    for y in range(len(v)):
-        s = v[max(x, y)] - v[min(x, y)]
-        if abs(s) >= 1:
-            sigma.append(0)
-        else:
-            sigma.append((2 + abs(s)) * (1 - abs(s)) ** 2)
+N = 1000
+n = 10
 
+t = np.zeros(N)
+for i in range(N):
+    T = np.random.uniform(size=n)
+    mtx = np.zeros((n,n))
+    for x in range(n):
+        for y in range(n):
+            mtx[x, y] = Y(T[x] - T[y])
 
-mean = 0.0
-count = 0
-sigma = np.reshape(sigma, (len(v), -1))
-mtx = np.linalg.cholesky(sigma)
-for i in range(n):
-    y = np.random.normal(size = n-1)
-    z = np.matmul(mtx, y).T
-    zmin = 9999
-    tmin = -9999
-    flag = False
-    for j in range(n-1):
-        if z[j] < zmin and z[j] > 2:
-            zmin = z[j]
-            tmin = z[j]
-            flag = True
-    if flag:
-        mean += tmin
-        count += 1
+    mtx = linalg.cholesky(mtx)
+    S = np.random.uniform(size=n)
+    X = np.dot(mtx, S)
+    Xmin = 9999
+    pos = 0
+    for i, x in enumerate(X):
+        if x > 2 and x < Xmin:
+            Xmin = x; pos = i
 
-print(f'mean: {mean / count}')
-#tex.printend()
+    t[i] = T[np.argmin(pos)]
+
+print(f'mean: {t.mean()}')
+
+#4
+print('\n4)')
+E0 = 64
+d = 3
+l = 2
+N = 1000
+E = np.zeros(N)
+
+for i in range(N):
+    deltal = d
+    e = E0
+    while True:
+        x = np.random.uniform(0, l)
+        fs = -l * np.log(x)
+        if e < 0 or deltal - fs < 0:
+            break
+        e -= np.random.uniform(0, E0)
+    E[i] = e
+
+print(f'loss mean: {E.mean()}')        
