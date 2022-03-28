@@ -189,3 +189,94 @@ for i in range(N):
     E[i] = e
 
 print(f'loss mean: {E.mean()}')
+
+#5
+print('\n5)')
+def check(pos, xy):
+    mtx = np.array([[-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1]])
+    ngb = []
+    for i in range(4):
+        pt = [mtx[i, 0] + pos[0], mtx[i, 1] + pos[1]]
+        if pt not in xy:
+            ngb.append(pt)
+
+    return ngb if len(ngb) > 0 else None
+
+
+dist = 0
+N = 1024
+n = 32
+finish = 0
+for i in range(N):
+    pos = [0, 0]
+    #used = [pos]
+    xy = [pos]
+    for x in range(n):
+        ngb = check(pos, xy)
+        if not ngb:
+            break
+        shift = np.random.randint(0, len(ngb))
+        pos = ngb[shift]
+        xy.append(pos)
+        #used.append(pos)
+        if len(xy) == n:
+            dist += np.sqrt(xy[-1][0]**2 + xy[-1][0]**2)
+            finish += 1
+            if finish < 256: # add first 256 successfull paths to plot
+                mtx = np.asmatrix(xy)
+                plt.plot(mtx[:,0], mtx[:,1])
+
+plt.plot([0], [0], 'ro')
+plt.savefig('wandering.png')
+print(f'stuck {N - finish} times! success: {finish}')
+print(f'mean: {dist/finish}')
+
+
+#6
+print('\n6)')
+coords = [1, 2, 3]
+R = 1
+n = 100
+N = 1000
+
+def V(w):
+    a = sum([v ** 2 for v in w])
+    b = 2 * sum([c * w[i] for i, c in enumerate(coords)])
+    c = sum([c ** 2 for c in coords]) - R ** 2
+    D = b**2 - 4 * a * c
+    return 0 if D >= 0 else 1
+
+def genVectors(n, MC=True):
+
+    #a2 = np.random.uniform(0, np.pi, n)
+    vects = np.zeros((n, 3))
+    #vects = np.array([[np.cos(a1[i]) * np.cos(a2[i]),
+    #                  np.cos(a1[i]) * np.sin(a2[i]),
+    #                  np.sin(a1[i]) * np.sin(a2[i])]
+    #                  for i in range(n)])
+    for i in range(n):
+        phi = np.random.uniform(0, np.pi / 2)
+        theta = np.arccos(1 - 2 * np.random.uniform())
+        vect = np.array([np.sin(theta) * np.cos(phi),
+                         np.sin(theta) * np.sin(phi),
+                         np.cos(theta)])
+        if MC and np.cos(theta) > 0:
+            vect = -vect
+        vects[i] = vect
+    return vects
+
+def MCc(vecs):
+    return 2*np.pi / np.mean([V(vec) * vec[-1] for vec in vecs])
+
+def ISc(vecs):
+    return np.pi / np.mean([V(vec) for vec in vecs])
+
+S1 = [MCc(genVectors(n)) for i in range(N)]
+S2 = [ISc(genVectors(n, False)) for i in range(N)]
+
+
+print(f'MC: {np.mean(S1)} {np.std(S1)}')
+print(f'IS: {np.mean(S2)} {np.std(S2)}')
