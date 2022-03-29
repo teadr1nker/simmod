@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import scipy.linalg as linalg
 #import sympy as smp
-import sys
-sys.path.append('../common/')
-from tex import tex
+
 
 def density(data, n):
     c, b = np.histogram(data, bins=n)
@@ -208,11 +206,11 @@ def check(pos, xy):
 
 dist = 0
 N = 1024
-n = 32
+n = 16
 finish = 0
+#used = []
 for i in range(N):
     pos = [0, 0]
-    #used = [pos]
     xy = [pos]
     for x in range(n):
         ngb = check(pos, xy)
@@ -225,14 +223,15 @@ for i in range(N):
         if len(xy) == n:
             dist += np.sqrt(xy[-1][0]**2 + xy[-1][0]**2)
             finish += 1
+            mtx = np.asmatrix(xy)
             if finish < 256: # add first 256 successfull paths to plot
-                mtx = np.asmatrix(xy)
                 plt.plot(mtx[:,0], mtx[:,1])
 
 plt.plot([0], [0], 'ro')
 plt.savefig('wandering.png')
 print(f'stuck {N - finish} times! success: {finish}')
 print(f'mean: {dist/finish}')
+#print(f'Generated {len(used)} unique paths')
 
 
 #6
@@ -250,13 +249,7 @@ def V(w):
     return 0 if D >= 0 else 1
 
 def genVectors(n, MC=True):
-
-    #a2 = np.random.uniform(0, np.pi, n)
     vects = np.zeros((n, 3))
-    #vects = np.array([[np.cos(a1[i]) * np.cos(a2[i]),
-    #                  np.cos(a1[i]) * np.sin(a2[i]),
-    #                  np.sin(a1[i]) * np.sin(a2[i])]
-    #                  for i in range(n)])
     for i in range(n):
         phi = np.random.uniform(0, np.pi / 2)
         theta = np.arccos(1 - 2 * np.random.uniform())
