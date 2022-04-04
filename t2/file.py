@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import json
 
 muaRPE = np.log(10) * 5 * 120.3
 muaB = np.log(10) * 150 * (3995.68 * 0.7 + 3903.64 * (1-0.7)) / 64500
@@ -77,8 +78,9 @@ for i in range(N):
     z = dist
     while True:
         env = where(dist)
+        #print(env, end='')
         if env >= len(df['name']):
-            print('pass!')
+            print('passed!')
             break
         mua = df['mua'][env]
         mus = df['mus'][env]
@@ -95,10 +97,10 @@ for i in range(N):
         x = np.sin(theta) * np.cos(phi)
         y = np.sin(theta) * np.sin(phi)
         z = np.cos(theta)
-
+        #decrease of weight
         w-= w * mua / (mua+mus)
         if w < wLim:
-            if np.random.uniform() < 1/m:
+            if np.random.uniform() < 1/m:   #consumption
                 absorbtion(x, y, z, w)
                 break
             w = w * m
@@ -108,22 +110,65 @@ for i in range(N):
             alpha = int(np.arccos(z / r) * 100)
             r = int(r * 100)
             alphaRDist[r, alpha] += w
+            
+        dist += z
 
-
+data = {}
 #1
 X = []
 Y = []
 Z = []
-for i in range(800):
-    for j in range(1010):
-        if decartDist[i, j] != 0.:
+for i, row in enumerate(decartDist):
+    for j, value in enumerate(row):
+        if value != 0.:
             X.append((i-300) / 800)
             Y.append((j - 10) / 1010)
-            Z.append(decartDist[i, j])
+            Z.append(value)
 
-#print(X, Y, Z)
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
-ax.plot(X, Y, Z)
-plt.show()
+data['flat'] = {'x': X, 'y': Y, 'z': Z}
+
+
+
+plt.scatter(X, Y)
+plt.xlabel('x'); plt.ylabel('y')
+plt.savefig('flat1.png')
 plt.clf()
+plt.scatter(X, Z)
+plt.xlabel('x'); plt.ylabel('w')
+plt.savefig('flat2.png')
+plt.clf()
+
+X = []
+Y = []
+Z = []
+
+for i, row in enumerate(cylDist):
+    for j, value in enumerate(row):
+        if value != 0.:
+            X.append(i / 100)
+            Y.append((j-32)/640)
+            Z.append(value)
+plt.scatter(X, Y)
+plt.xlabel('r'); plt.ylabel('alpha')
+plt.savefig('cylinder.png')
+plt.clf()
+data['cylinder'] = {'x': X, 'y': Y, 'z': Z}
+
+
+X = []
+Y = []
+Z = []
+
+for i, row in enumerate(alphaRDist):
+    for j, value in enumerate(row):
+        if value != 0.:
+            X.append(i/1000)
+            Y.append(j/1300)
+            Z.append(value)
+
+plt.scatter(X, Z)
+plt.xlabel('r'); plt.ylabel('alpha')
+plt.savefig('weight')
+plt.clf()
+data['weight'] = {'x': X, 'y': Y, 'z': Z}
+json.dump(data, open("data.json", "w"))
