@@ -84,7 +84,7 @@ for i in range(N):
             break
         mua = df['mua'][env]
         mus = df['mus'][env]
-        g = df['g'][env]
+        #g = df['g'][env]
         if mua / (mua+mus) > np.random.uniform(): #consumed
             absorbtion(x, y, z, w)
             break
@@ -110,7 +110,7 @@ for i in range(N):
             alpha = int(np.arccos(z / r) * 100)
             r = int(r * 100)
             alphaRDist[r, alpha] += w
-            
+
         dist += z
 
 data = {}
@@ -138,6 +138,7 @@ plt.xlabel('x'); plt.ylabel('w')
 plt.savefig('flat2.png')
 plt.clf()
 
+#2
 X = []
 Y = []
 Z = []
@@ -154,7 +155,7 @@ plt.savefig('cylinder.png')
 plt.clf()
 data['cylinder'] = {'x': X, 'y': Y, 'z': Z}
 
-
+#3
 X = []
 Y = []
 Z = []
