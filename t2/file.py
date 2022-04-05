@@ -29,13 +29,12 @@ def pCosT(theta, g):
     y = (-y + 1 + g**2) / (2*g)
     return 1 if pd.isna(y) else y
 
-mi = 1000
-ma = -1000
-
 
 def absorbtion(x, y, z, w):
     xx = int(x*1000 + 300)
     zz = int(z*1000 + 10)
+
+    #Q = 0.
 
     if xx >= 1 and xx <= 800 and zz >= 1 and zz <= 1010:
         #print('added w')
@@ -51,11 +50,12 @@ def absorbtion(x, y, z, w):
     cylDist[ro, phi] += Q
 
     #total
-    r = np.sqrt(x**2 + y**2 + z**2)
-    alpha = int(np.arccos(z / r) * 100)
-    r = int(r * 100)
-    r = 999 if r >= 1000 else r
-    alphaRDist[r, alpha] += w
+    if z >= 0:
+        r = np.sqrt(x**2 + y**2 + z**2)
+        alpha = int(np.arccos(z / r) * 100)
+        r = int(r * 100)
+        r = 999 if r >= 1000 else r
+        alphaRDist[r, alpha] += w
 
 def where(L):
     cur = 0.
@@ -66,8 +66,7 @@ def where(L):
     return len(df['thick'])
 
 wLim = 0.02
-N = 200
-m = 6
+N = 500
 
 for i in range(N):
     mua = df['mua'][0]
@@ -75,6 +74,7 @@ for i in range(N):
     dist = np.random.exponential(mus + mua)
     w = 1
     x = y = 0
+
     z = dist
     while True:
         env = where(dist)
@@ -84,7 +84,7 @@ for i in range(N):
             break
         mua = df['mua'][env]
         mus = df['mus'][env]
-        #g = df['g'][env]
+        g = df['g'][env]
         if mua / (mua+mus) > np.random.uniform(): #consumed
             absorbtion(x, y, z, w)
             break
@@ -98,18 +98,19 @@ for i in range(N):
         y = np.sin(theta) * np.sin(phi)
         z = np.cos(theta)
         #decrease of weight
-        w-= w * mua / (mua+mus)
+        w -= w * mua / (mua+mus)
         if w < wLim:
-            if np.random.uniform() < 1/m:   #consumption
+            if np.random.uniform() < .1:   #consumption
                 absorbtion(x, y, z, w)
                 break
-            w = w * m
+            w = w * 10
 
-        if z >= 0:
-            r = np.sqrt(x**2 + y**2 + z**2)
-            alpha = int(np.arccos(z / r) * 100)
-            r = int(r * 100)
-            alphaRDist[r, alpha] += w
+
+        #if z >= 0 and False:
+        #    r = np.sqrt(x**2 + y**2 + z**2)
+        #    alpha = int(np.arccos(z / r) * 100)
+        #    r = int(r * 100)
+        #    alphaRDist[r, alpha] += w
 
         dist += z
 
@@ -118,7 +119,7 @@ data = {}
 X = []
 Y = []
 Z = []
-for i, row in enumerate(decartDist):
+for i, row in enumerate(decartWeight):
     for j, value in enumerate(row):
         if value != 0.:
             X.append((i-300) / 800)
@@ -134,8 +135,12 @@ plt.xlabel('x'); plt.ylabel('y')
 plt.savefig('flat1.png')
 plt.clf()
 plt.scatter(X, Z)
-plt.xlabel('x'); plt.ylabel('w')
+plt.xlabel('x'); plt.ylabel('Q')
 plt.savefig('flat2.png')
+plt.clf()
+plt.scatter(Y, Z)
+plt.xlabel('y'); plt.ylabel('Q')
+plt.savefig('flat3.png')
 plt.clf()
 
 #2
@@ -143,15 +148,19 @@ X = []
 Y = []
 Z = []
 
-for i, row in enumerate(cylDist):
+for i, row in enumerate(cylWeight):
     for j, value in enumerate(row):
         if value != 0.:
             X.append(i / 100)
-            Y.append((j-32)/640)
+            Y.append(j / 640)
             Z.append(value)
 plt.scatter(X, Y)
 plt.xlabel('r'); plt.ylabel('alpha')
-plt.savefig('cylinder.png')
+plt.savefig('cylinder1.png')
+plt.clf()
+plt.scatter(X, Z)
+plt.xlabel('r'); plt.ylabel('Q')
+plt.savefig('cylinder2.png')
 plt.clf()
 data['cylinder'] = {'x': X, 'y': Y, 'z': Z}
 
@@ -164,11 +173,11 @@ for i, row in enumerate(alphaRDist):
     for j, value in enumerate(row):
         if value != 0.:
             X.append(i/1000)
-            Y.append(j/1300)
+            Y.append(-j/1300)
             Z.append(value)
 
-plt.scatter(X, Z)
-plt.xlabel('r'); plt.ylabel('alpha')
+plt.scatter(Y, Z)
+plt.xlabel('r'); plt.ylabel('W')
 plt.savefig('weight')
 plt.clf()
 data['weight'] = {'x': X, 'y': Y, 'z': Z}
