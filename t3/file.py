@@ -106,11 +106,10 @@ def task2(file, alpha, beta, nTheme):
 
         #calc phi
         for theme in range(nTheme):
-            sumy = 0
-            sumz = 0
             for doc in range(nDoc):
                 words = np.array(df.query(f'doc == {doc+1}')['word']) - 1
                 for word in range(nWord):
+                    sumz = 0; sumy = 0
                     if themeDW[doc, word] == theme:
                         sumy += themeDW[doc, word]
                         if word in words:
@@ -124,10 +123,9 @@ task2('test1.dat', 1, 1, 3)
 #task2('test2.dat', .1, .1, 20)
 
 #3
-if input('run Ising model? y ') != 'y':
+if input('\n3) run Ising model? y ') != 'y':
     quit(0)
 
-print('\n3)')
 beta1 = 1.
 beta2 = 1.5
 n = int(1e2)
